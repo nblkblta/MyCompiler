@@ -26,8 +26,12 @@ class Lexer:
                 raise LexerException(self.coord.__str__() + 'real number value error')
         elif self.curr_token.type == 'integer':
             self.curr_token.value = int(self.curr_token.src)
+            if self.curr_token.value > 1.7e308: #посмотреть ограничения
+                raise LexerException(self.coord.__str__() + 'real number value error')
         elif self.curr_token.type == 'identf':
             self.curr_token.value = self.curr_token.src.lower()
+        elif self.curr_token.type == 'string literal':
+            pass
         else:
             self.curr_token.value = self.curr_token.src
 
@@ -81,13 +85,18 @@ class Lexer:
                     raise LexerException(self.coord.__str__() +" Lexical error " + self.curr_token.src)
                 self.curr_token.type = 'real'
                 e_flag = True
-            if str(self.curr_symbol)[2] == '.':
+                self.get_symbol()
+                if not (str(self.curr_symbol)[2] == '-' or str(self.curr_symbol)[2] == '+'):
+                    raise LexerException(self.coord.__str__() + " Lexical error " + self.curr_token.src)
+                else:
+                    self.curr_token.src += str(self.curr_symbol)[2]
+            elif str(self.curr_symbol)[2] == '.':
                 if point_flag or e_flag:
                     self.curr_token.type = 'error'
                     raise LexerException(self.coord.__str__() +" Lexical error " + self.curr_token.src)
                 self.curr_token.type = 'real'
                 point_flag = True
-            if str(self.curr_symbol)[2] == '-' or str(self.curr_symbol)[2] == '+':
+            elif str(self.curr_symbol)[2] == '-' or str(self.curr_symbol)[2] == '+':
                 if e_flag and not op_flag:
                     op_flag = True
                 else:
@@ -99,11 +108,64 @@ class Lexer:
                 self.curr_token.type = 'error'
             return
 
-    def lexer_analize(self):
-        if self.curr_symbol == b'':
-            self.curr_token.type = 'EOF'
+    def get_string(self):
+        cntr_flag = True
+        self.curr_token.type = 'string literal'
+        self.curr_token.src += str(self.curr_symbol)[2]
+        while cntr_flag:
+            buf = ''
+            while str(self.curr_symbol)[2] != "'":
+                self.get_symbol()
+                if self.curr_symbol == b'\r':
+                    if len(buf) == 0:
+                        raise LexerException(self.coord.__str__() + 'Unexpected end of line')
+                    self.curr_token.value += chr(int(buf))
+                    return
+                if str(self.curr_symbol)[2] == '#':
+                    if len(buf) == 0:
+                        raise LexerException(self.coord.__str__() + 'Unexpected #')
+                    self.curr_token.value += chr(int(buf))
+                    buf = ''
+                    self.curr_token.src += str(self.curr_symbol)[2]
+                    continue
+                if str(self.curr_symbol)[2] == "'":
+                    if len(buf) == 0:
+                        raise LexerException(self.coord.__str__() + "Unexpected '")
+                    self.curr_token.value += chr(int(buf))
+                    buf = ''
+                    self.curr_token.src += str(self.curr_symbol)[2]
+                    self.curr_token.value += str(self.curr_symbol)[2]
+                    break
+                self.curr_token.src += str(self.curr_symbol)[2]
+                buf += str(self.curr_symbol)[2]
             self.get_symbol()
-            return
+            if self.curr_symbol == b'\r':
+                if len(buf) == 0:
+                    raise LexerException(self.coord.__str__() + 'Unexpected end of line')
+                self.curr_token.value += chr(int(buf))
+                return
+            while str(self.curr_symbol)[2] != "'":
+                self.curr_token.src += str(self.curr_symbol)[2]
+                self.curr_token.value += str(self.curr_symbol)[2]
+                self.get_symbol()
+                if self.curr_symbol == b'\r':
+                    raise LexerException(self.coord.__str__() + 'Unexpected end of line')
+            self.curr_token.src += str(self.curr_symbol)[2]
+            self.curr_token.value += str(self.curr_symbol)[2]
+            self.get_symbol()
+            if str(self.curr_symbol)[2] != '#':
+                cntr_flag = False
+            else:
+                self.curr_token.src += str(self.curr_symbol)[2]
+        self.curr_token.src += str(self.curr_symbol)[2]
+        self.get_symbol()
+
+    def lexer_analize(self):
+
+        if str(self.curr_symbol)[2] == ' ':
+            self.get_symbol()
+            while str(self.curr_symbol)[2] == ' ':
+                self.get_symbol()
 
         if str(self.curr_symbol)[2] == "{":
             while str(self.curr_symbol)[2] != "}":
@@ -116,6 +178,11 @@ class Lexer:
             self.get_new_line()
 
         self.curr_token = Token(self.coord.copy(), '', '', '')
+
+        if self.curr_symbol == b'':
+            self.curr_token.type = 'EOF'
+            self.get_symbol()
+            return
 
         if str(self.curr_symbol)[2].isalpha():
             self.get_identf()
@@ -137,24 +204,13 @@ class Lexer:
             self.get_symbol()
             return
 
-        if str(self.curr_symbol)[2] == ' ':
-            self.curr_token.type = 'space'
-            self.curr_token.src += str(self.curr_symbol)[2]
-            self.get_symbol()
-            while str(self.curr_symbol)[2] == ' ':
-                self.curr_token.src += str(self.curr_symbol)[2]
-                self.get_symbol()
+
+
+        if str(self.curr_symbol)[2] == "'" or str(self.curr_symbol)[2] == "#":
+            self.get_string()
             return
 
-        if str(self.curr_symbol)[2] == "'":
-            self.curr_token.type = 'string literal'
-            self.curr_token.src += str(self.curr_symbol)[2]
-            self.get_symbol()
-            while str(self.curr_symbol)[2] != "'":
-                self.curr_token.src += str(self.curr_symbol)[2]
-                self.get_symbol()
-            self.curr_token.src += str(self.curr_symbol)[2]
-            self.get_symbol()
-            return
+
+
 
 
