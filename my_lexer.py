@@ -1,6 +1,6 @@
 from my_token import Token
 from my_error import LexerException
-
+from my_type import LexemType
 
 class Lexer:
     coord: [2]
@@ -22,22 +22,32 @@ class Lexer:
         raise LexerException(f'{self.coord} {message} {self.curr_token.src}')
 
     def set_token_value(self):
-        if self.curr_token.type == 'real':
+        if self.curr_token.type == LexemType.REAL:
             self.curr_token.value = float(self.curr_token.src)
             if self.curr_token.value > 1.7e308:
                 self.error("too big real number")
-        elif self.curr_token.type == 'integer':
+        elif self.curr_token.type == LexemType.INT:
             self.curr_token.value = int(self.curr_token.src)
             if self.curr_token.value > 32767:
                 self.error('integer number value error')
-        elif self.curr_token.type.find('integer') == 0:
-            self.curr_token.value = int(self.curr_token.src[1:], int(self.curr_token.type[7:]))
-            self.curr_token.type = 'integer'
+        elif self.curr_token.type == LexemType.INT16:
+            self.curr_token.value = int(self.curr_token.src[1:], 16)
+            self.curr_token.type = LexemType.INT
             if self.curr_token.value > 32767:
                 self.error('integer number value error')
-        elif self.curr_token.type == 'identf':
+        elif self.curr_token.type == LexemType.INT8:
+            self.curr_token.value = int(self.curr_token.src[1:], 8)
+            self.curr_token.type = LexemType.INT
+            if self.curr_token.value > 32767:
+                self.error('integer number value error')
+        elif self.curr_token.type == LexemType.INT2:
+            self.curr_token.value = int(self.curr_token.src[1:], 2)
+            self.curr_token.type = LexemType.INT
+            if self.curr_token.value > 32767:
+                self.error('integer number value error')
+        elif self.curr_token.type == LexemType.IDENTF:
             self.curr_token.value = self.curr_token.src.lower()
-        elif self.curr_token.type == 'string literal':
+        elif self.curr_token.type == LexemType.STRING:
             pass
         else:
             self.curr_token.value = self.curr_token.src
@@ -58,17 +68,17 @@ class Lexer:
 
     def get_identf(self):
         self.curr_token.src += self.get_curr_sym()
-        self.curr_token.type = 'identf'
+        self.curr_token.type = LexemType.IDENTF
         self.get_symbol()
         while self.get_curr_sym().isalnum() or self.get_curr_sym() == '_':
             self.curr_token.src += self.get_curr_sym()
             self.get_symbol()
         if self.curr_token.src in self.keywords:
-            self.curr_token.type = 'keyword'
+            self.curr_token.type = LexemType.KEYWORD
         elif self.curr_token.src in self.operations:
-            self.curr_token.type = 'operator'
+            self.curr_token.type = LexemType.OPERATOR
         elif len(self.curr_token.src) > 64:
-            self.error(" too long identificator size")
+            self.error("too long identificator size")
 
     def get_new_line(self):
         self.get_symbol()
@@ -80,12 +90,11 @@ class Lexer:
         e_flag = False
         point_flag = False
         sign_flag = False
-        self.curr_token.type = 'real'
+        self.curr_token.type = LexemType.REAL
         while self.get_curr_sym().isnumeric( ) or self.get_curr_sym().lower() == 'e' \
                 or self.get_curr_sym() in {'.', '-', '+'}:
             if self.get_curr_sym().lower() == 'e':
                 if e_flag:
-                    self.curr_token.type = 'error'
                     self.error("Lexical error real number e ")
                 e_flag = True
                 self.curr_token.src += self.get_curr_sym()
@@ -109,21 +118,20 @@ class Lexer:
         return
 
     def get_number(self):
-        self.curr_token.type = 'integer'
+        self.curr_token.type = LexemType.INT
         while self.get_curr_sym().isnumeric():
             self.curr_token.src += self.get_curr_sym()
             self.get_symbol()
             if self.get_curr_sym() == 'e' or self.get_curr_sym() == '.':
                 self.get_real_number()
                 return
-        else:
-            if self.get_curr_sym().isalpha():
-                self.error("Unexpected symbol")
-            return
+        if self.get_curr_sym().isalpha():
+            self.error("Unexpected symbol")
+        return
 
     def get_ctrl_symbol(self):
         self.curr_token.src += self.get_curr_sym()
-        self.curr_token.type = 'string literal'
+        self.curr_token.type = LexemType.STRING
         buf = ''
         self.get_symbol()
         while self.get_curr_sym().isnumeric():
@@ -145,7 +153,7 @@ class Lexer:
             self.error('Unexpected symbol')
 
     def get_string(self):
-        self.curr_token.type = 'string literal'
+        self.curr_token.type = LexemType.STRING
         self.curr_token.src += self.get_curr_sym()
         self.get_symbol()
         while self.get_curr_sym() != "'":
@@ -163,7 +171,7 @@ class Lexer:
         return str(self.curr_symbol)[2]
 
     def get_int16(self):
-        self.curr_token.type = 'integer16'
+        self.curr_token.type = LexemType.INT16
         self.curr_token.src += self.get_curr_sym()
         self.get_symbol()
         while self.get_curr_sym().isnumeric() or ("a" <= self.get_curr_sym().lower() <= "f"):
@@ -173,7 +181,7 @@ class Lexer:
             self.error("Unexpected numeric symbol")
 
     def get_int8(self):
-        self.curr_token.type = 'integer8'
+        self.curr_token.type = LexemType.INT8
         self.curr_token.src += self.get_curr_sym()
         self.get_symbol()
         while self.get_curr_sym().isnumeric():
@@ -185,7 +193,7 @@ class Lexer:
             self.error("Unexpected numeric symbol")
 
     def get_int2(self):
-        self.curr_token.type = 'integer2'
+        self.curr_token.type = LexemType.INT2
         self.curr_token.src += self.get_curr_sym()
         self.get_symbol()
         while self.get_curr_sym() in {'0', '1'}:
@@ -195,7 +203,7 @@ class Lexer:
             self.error("Unexpected numeric symbol")
 
     def get_separator(self):
-        self.curr_token.type = 'separator'
+        self.curr_token.type = LexemType.SEPARATOR
         self.curr_token.src += self.get_curr_sym()
         self.get_symbol()
 
@@ -258,7 +266,7 @@ class Lexer:
                 break
 
             if self.get_curr_sym() in {'<', '>'}:
-                self.curr_token.type = 'operator'
+                self.curr_token.type = LexemType.OPERATOR
                 self.curr_token.src += self.get_curr_sym()
                 self.get_symbol()
                 if self.get_curr_sym() == '=':
@@ -273,10 +281,10 @@ class Lexer:
 
             if self.get_curr_sym() == ':':
                 self.curr_token.src += self.get_curr_sym()
-                self.curr_token.type = 'separator'
+                self.curr_token.type = LexemType.SEPARATOR
                 self.get_symbol()
                 if self.get_curr_sym() == '=':
-                    self.curr_token.type = 'operator'
+                    self.curr_token.type = LexemType.OPERATOR
                     self.curr_token.src += self.get_curr_sym()
                     self.get_symbol()
                     break
@@ -288,7 +296,7 @@ class Lexer:
                 break
 
             if self.get_curr_sym() in self.operations:
-                self.curr_token.type = 'operator'
+                self.curr_token.type = LexemType.OPERATOR
                 self.curr_token.src += self.get_curr_sym()
                 self.get_symbol()
                 break
