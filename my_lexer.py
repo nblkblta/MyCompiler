@@ -27,18 +27,8 @@ class Lexer:
             self.curr_token.value = int(self.curr_token.src)
             if self.curr_token.value > 32767:
                 raise LexerException(self.coord.__str__() + 'integer number value error')
-        elif self.curr_token.type == 'integer16':
-            self.curr_token.value = int(self.curr_token.src[1:], 16)
-            self.curr_token.type = 'integer'
-            if self.curr_token.value > 32767:
-                raise LexerException(self.coord.__str__() + 'integer number value error')
-        elif self.curr_token.type == 'integer8':
-            self.curr_token.value = int(self.curr_token.src[1:], 8)
-            self.curr_token.type = 'integer'
-            if self.curr_token.value > 32767:
-                raise LexerException(self.coord.__str__() + 'integer number value error')
-        elif self.curr_token.type == 'integer2':
-            self.curr_token.value = int(self.curr_token.src[1:], 2)
+        elif self.curr_token.type.find('integer') == 0:
+            self.curr_token.value = int(self.curr_token.src[1:], int(self.curr_token.type[7:]))
             self.curr_token.type = 'integer'
             if self.curr_token.value > 32767:
                 raise LexerException(self.coord.__str__() + 'integer number value error')
