@@ -10,7 +10,7 @@ class Lexer:
                 'const', 'downto', 'file', 'for', 'goto', 'label', 'of', 'packed', 'procedure', 'program', 'record',
                 'repeat', 'set', 'to', 'type', 'until', 'while', 'with'}
     separators = {'(', ')', ':', '.', ',', '..', ';'}
-    operations = {'+', '@', '^', '.', 'in', '-', '/', '*', '=', '>', '<', 'div', '<=', '>=', '<>', 'and', ':=', 'not',\
+    operations = {'+', '@', '^', '.', 'in', '-', '/', '*', '=', '>', '<', 'div', '<=', '>=', '<>', 'and', ':=', 'not',
                   'or', 'shl', 'shr', 'xor', 'mod'}
 
     def __init__(self, filestream):
@@ -224,6 +224,20 @@ class Lexer:
             if str(self.curr_symbol)[2] > "f":
                 raise LexerException(self.coord.__str__() + "Unexpected alphabet symbol")
             return
+
+        if str(self.curr_symbol)[2] in {'<', '>', '<'}:
+            self.curr_token.type = 'operator'
+            self.curr_token.src += str(self.curr_symbol)[2]
+            self.get_symbol()
+            if str(self.curr_symbol)[2] == '=':
+                self.curr_token.src += str(self.curr_symbol)[2]
+                self.get_symbol()
+                return
+            elif str(self.curr_symbol)[2] == '>':
+                self.curr_token.src += str(self.curr_symbol)[2]
+                self.get_symbol()
+                return
+
 
         if str(self.curr_symbol)[2] in self.separators:
             self.curr_token.type = 'separator'
