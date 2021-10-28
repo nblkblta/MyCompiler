@@ -1,7 +1,7 @@
 from parse_expr.parser_expr_node.expr_node import ExprNode
 
 
-class IntNode(ExprNode):
+class RealNode(ExprNode):
     def __init__(self, token):
         self.token = token
 

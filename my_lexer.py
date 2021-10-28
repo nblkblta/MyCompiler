@@ -10,7 +10,7 @@ class Lexer:
                 'const', 'downto', 'file', 'for', 'goto', 'label', 'of', 'packed', 'procedure', 'program', 'record',
                 'repeat', 'set', 'to', 'type', 'until', 'while', 'with'}
     separators = {'(', ')', ':', '.', ',', '..', ';'}
-    operations = {'+', '@', '^', '.', 'in', '()', '[]'}
+    operations = {'+', '@', '^', '.', 'in'}
     binOperations = {'-', '/', '*', '=', '>', '<', 'div', '<=', '>=', '<>', 'and', ':=', 'not', 'or', 'shl', 'shr',
                      'xor', 'mod'}
 

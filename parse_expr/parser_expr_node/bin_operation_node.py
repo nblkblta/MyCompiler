@@ -14,5 +14,5 @@ class BinOpNode(ExprNode):
         left_operand = self.left_operand.print(priority=priority+1)
         return f"{operation}\n{tab*priority}{left_operand}\n{tab*priority}{right_operand}"
 
-    def getValue(self):
+    def get_value(self):
         pass

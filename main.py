@@ -52,7 +52,12 @@ def parser_test(quantity):
         j = -1
         error_count = 0
         try:
-            print(parser.parseExpr().print())
+            out = parser.parseExpr().print()
+            for sym in out:
+                sym_answ = answer.read(1)
+                if sym != sym_answ:
+                    print("ошибка " + sym + " " + sym_answ)
+                    print(out)
         except my_error.CompilerException as error:
             print(error.__str__())
         test.close()
@@ -64,4 +69,4 @@ if __name__ == "__main__":
         if param == '-l':
             lexer_test(6)
         if param == '-p':
-            parser_test(1)
+            parser_test(3)

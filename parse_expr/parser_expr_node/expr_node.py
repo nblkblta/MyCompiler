@@ -8,5 +8,5 @@ class ExprNode(Node, ABC):
         pass
 
     @abstractmethod
-    def getValue(self):
+    def get_value(self):
         pass
