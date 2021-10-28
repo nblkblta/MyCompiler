@@ -14,7 +14,7 @@ class Token:
         print(self.coord, self.type, self.src, self.value)
 
     def get_str(self):
-        return [self.coord, self.type, self.src, self.value].__str__()
+        return [self.coord, self.type, self.src, self.value]
 
     def get_type(self):
         return self.type

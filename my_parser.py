@@ -13,9 +13,10 @@ class ParserExpr:
 
     bin_operations = {'-', '/', '*', '=', '>', '<', 'div', '<=', '>=', '<>', 'and', ':=', 'not', 'or', 'shl', 'shr',
                      'xor', 'mod'}
+
     def parseExpr(self):
         token = self.lexer.get_curr_token()
-        if not token.get_type() != "EOF" or token.get_value() == ';':
+        if token.get_type() == "EOF" or token.get_value() == ';':
             raise CompilerException(f"{token.get_coord()} Expected expression")
         left = self.parseTerm()
         operation = self.lexer.get_curr_token()
