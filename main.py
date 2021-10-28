@@ -67,6 +67,6 @@ def parser_test(quantity):
 if __name__ == "__main__":
     for param in sys.argv:
         if param == '-l':
-            lexer_test(6)
+            lexer_test(7)
         if param == '-p':
             parser_test(3)

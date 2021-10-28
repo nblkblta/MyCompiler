@@ -9,7 +9,7 @@ class BinOpNode(ExprNode):
 
     def print(self, priority=1):
         operation = self.operation.get_value()
-        tab = "    "
+        tab = "     "
         right_operand = self.right_operand.print(priority=priority+1)
         left_operand = self.left_operand.print(priority=priority+1)
         return f"{operation}\n{tab*priority}{left_operand}\n{tab*priority}{right_operand}"

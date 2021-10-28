@@ -10,9 +10,8 @@ class Lexer:
                 'const', 'downto', 'file', 'for', 'goto', 'label', 'of', 'packed', 'procedure', 'program', 'record',
                 'repeat', 'set', 'to', 'type', 'until', 'while', 'with'}
     separators = {'(', ')', ':', '.', ',', '..', ';'}
-    operations = {'+', '@', '^', '.', 'in'}
-    binOperations = {'-', '/', '*', '=', '>', '<', 'div', '<=', '>=', '<>', 'and', ':=', 'not', 'or', 'shl', 'shr',
-                     'xor', 'mod'}
+    operations = {'+', '@', '^', '.', 'in', '-', '/', '*', '=', '>', '<', 'div', '<=', '>=', '<>', 'and', ':=', 'not',\
+                  'or', 'shl', 'shr', 'xor', 'mod'}
 
     def __init__(self, filestream):
         self.filestream = filestream
@@ -26,7 +25,22 @@ class Lexer:
                 raise LexerException(self.coord.__str__() + 'real number value error')
         elif self.curr_token.type == 'integer':
             self.curr_token.value = int(self.curr_token.src)
-            if self.curr_token.value > 1.7e308:
+            if self.curr_token.value > 32767:
+                raise LexerException(self.coord.__str__() + 'integer number value error')
+        elif self.curr_token.type == 'integer16':
+            self.curr_token.value = int(self.curr_token.src[1:], 16)
+            self.curr_token.type = 'integer'
+            if self.curr_token.value > 32767:
+                raise LexerException(self.coord.__str__() + 'integer number value error')
+        elif self.curr_token.type == 'integer8':
+            self.curr_token.value = int(self.curr_token.src[1:], 8)
+            self.curr_token.type = 'integer'
+            if self.curr_token.value > 32767:
+                raise LexerException(self.coord.__str__() + 'integer number value error')
+        elif self.curr_token.type == 'integer2':
+            self.curr_token.value = int(self.curr_token.src[1:], 2)
+            self.curr_token.type = 'integer'
+            if self.curr_token.value > 32767:
                 raise LexerException(self.coord.__str__() + 'integer number value error')
         elif self.curr_token.type == 'identf':
             self.curr_token.value = self.curr_token.src.lower()
@@ -113,7 +127,7 @@ class Lexer:
                 return
         else:
             if str(self.curr_symbol)[2].isalpha():
-                self.curr_token.type = 'error'
+                raise LexerException(self.coord.__str__() + "Unexpected symbol" + self.curr_token.src)
             return
 
     def get_ctrl_symbol(self):
@@ -127,18 +141,17 @@ class Lexer:
             self.get_symbol()
         if len(buf) == 0:
             raise LexerException(self.coord.__str__() + 'Empty control symbol')
+        self.curr_token.value += chr(int(buf))
         if self.curr_symbol == b'\r':
-            self.curr_token.value += chr(int(buf))
             return
-        if str(self.curr_symbol)[2] == '#':
-            self.curr_token.value += chr(int(buf))
+        elif str(self.curr_symbol)[2] == '#':
             self.get_ctrl_symbol()
             return
-        if str(self.curr_symbol)[2] == "'":
-            self.curr_token.value += chr(int(buf))
+        elif str(self.curr_symbol)[2] == "'":
             self.get_string()
             return
-        self.get_symbol()
+        else:
+            raise LexerException(self.coord.__str__() + 'unexpected symbol')
 
     def get_string(self):
         self.curr_token.type = 'string literal'
@@ -187,6 +200,41 @@ class Lexer:
             self.get_number()
             return
 
+        if str(self.curr_symbol)[2] == "&":
+            self.curr_token.type = 'integer8'
+            self.curr_token.src += str(self.curr_symbol)[2]
+            self.get_symbol()
+            while str(self.curr_symbol)[2].isnumeric():
+                if int(str(self.curr_symbol)[2]) > 7:
+                    raise LexerException(self.coord.__str__() + "Unexpected numeric symbol")
+                self.curr_token.src += str(self.curr_symbol)[2]
+                self.get_symbol()
+            if str(self.curr_symbol)[2].isalpha():
+                raise LexerException(self.coord.__str__() + "Unexpected numeric symbol")
+            return
+
+        if str(self.curr_symbol)[2] == "%":
+            self.curr_token.type = 'integer2'
+            self.curr_token.src += str(self.curr_symbol)[2]
+            self.get_symbol()
+            while str(self.curr_symbol)[2] in {'0', '1'}:
+                self.curr_token.src += str(self.curr_symbol)[2]
+                self.get_symbol()
+            if str(self.curr_symbol)[2].isalpha():
+                raise LexerException(self.coord.__str__() + "Unexpected numeric symbol")
+            return
+
+        if str(self.curr_symbol)[2] == "$":
+            self.curr_token.type = 'integer16'
+            self.curr_token.src += str(self.curr_symbol)[2]
+            self.get_symbol()
+            while str(self.curr_symbol)[2].isnumeric() or ("a" <= str(self.curr_symbol)[2].lower() <= "f"):
+                self.curr_token.src += str(self.curr_symbol)[2]
+                self.get_symbol()
+            if str(self.curr_symbol)[2] > "f":
+                raise LexerException(self.coord.__str__() + "Unexpected alphabet symbol")
+            return
+
         if str(self.curr_symbol)[2] in self.separators:
             self.curr_token.type = 'separator'
             self.curr_token.src += str(self.curr_symbol)[2]
@@ -200,7 +248,7 @@ class Lexer:
             self.get_symbol()
             return
 
-        if str(self.curr_symbol)[2] in self.operations or str(self.curr_symbol)[2] in self.binOperations:
+        if str(self.curr_symbol)[2] in self.operations:
             self.curr_token.type = 'operator'
             self.curr_token.src += str(self.curr_symbol)[2]
             self.get_symbol()

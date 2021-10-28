@@ -7,7 +7,7 @@ class UnOpNode(ExprNode):
         self.operand = operand
 
     def print(self, priority=None):
-        return f"{self.operation.getValue()}{self.operand.getValue()}"
+        return f"{self.operation.get_value()}{self.operand.get_value()}"
 
     def get_value(self):
         pass
